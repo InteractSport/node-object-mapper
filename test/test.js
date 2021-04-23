@@ -2656,3 +2656,20 @@ test("issue #74: mapping empty array should result in empty array", t => {
   t.deepEqual(result, expect);
   t.end();
 });
+
+
+test("test that null value inside array is added", t => {
+  const src = {first : [ { one: null, two: 1 }, { one: null, two: 2 } ]};
+
+  const map = {
+    'first[].one': 'first[].one?',
+    'first[].two': 'first[].two?'
+  };
+
+  const expect = {first : [ { one: null, two: 1 }, { one: null, two: 2 } ]}
+
+  const result = om(src, map);
+
+  t.deepEqual(result, expect);
+  t.end();
+});
