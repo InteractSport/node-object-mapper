@@ -22,7 +22,9 @@ function ObjectMapper(src, dest, map)
 
   // Loop through the map to process individual mapping instructions
   for (const srckey in map) {
+
     const destkey = map[srckey]
+
     // Extract the data from the source object or array
     const data = getKeyValue(src, srckey)
     // Build an object with all of these parameters in case custom transform or default functions need them to derive their values
@@ -50,6 +52,7 @@ function getKeyValue(src, keystr)
 // If the value does not exist, return null
 function select(src, keys)
 {
+
   // Get the object key or index that needs to be parsed
   const key = keys.shift()
 
@@ -62,16 +65,19 @@ function select(src, keys)
     return select_obj(src, key, keys)
 
   // No data matching the instructions is found - return null
+
   return null
 }
 
 // Loop through the array and select the key from each value in the array.  If nothing comes back, return null
 function select_arr(src, key, keys)
 {
+
   let data = []
 
   // The source is not an array even though we specify array.  Grab the subnode and add to an array.
   if (!Array.isArray(src)) {
+
     let d = null
     // Try to get the next value in the chain.  If possible, then add to an array
     if (keys.length)
@@ -82,25 +88,31 @@ function select_arr(src, key, keys)
 
   // Recursively loop through the array and grab the data
   for (var i=0; i<src.length; i++) {
+
     // Check to see if we are at a 'leaf' (no more keys to parse).  If so, return the data.  If not, recurse
     var d = (keys.length) ? select(src[i], keys.slice()) : src[i]
+  
     // If the data is populated, add it to the array.  Make sure to keep the same array index so that traversing multi-level arrays work
-    if (d !== null)
-      data[i] = d
+    data[i] = d
   }
 
   // Return the whole array if a specific index is not defined('') and there is data to return
-  if (key.ix == '' && data.length)
+  if (key.ix == '' && data.length) {
+
     return data
+  }
 
   // Return a specific node in the array if defined
-  if (key.ix && typeof negative_array_access(data, key.ix) !== 'undefined')
+  if (key.ix && typeof negative_array_access(data, key.ix) !== 'undefined') {
+
     return negative_array_access(data, key.ix);
+  }
 
   // If we are not expecting an array, return the first node - kinda hacky
-  if (typeof data[0] !== 'undefined' && key.name && data[0][key.name])
+  if (typeof data[0] !== 'undefined' && key.name && data[0][key.name]) {
+
     return data[0][key.name]
-  
+  }
   // Otherwise, return nothing
   return null
 }
@@ -115,6 +127,7 @@ function negative_array_access(arr, ix)
 // Traverse the given object for data using the given key array
 function select_obj(src, key, keys)
 {
+
   // Make sure that there is data where we are looking
   if (src && key.name) {
     
@@ -169,11 +182,14 @@ function select_obj_keys(src, keys)
 function setKeyValue(dest, keystr, data, context = {})
 {
   // Keystr is undefined - call set_data in case there is a default or transformation to deal with
-  if (typeof keystr == 'undefined' || keystr == null)
+  if (typeof keystr == 'undefined' || keystr == null){
+
     return set_data(dest, keystr, data, context)
+  }
 
   // Keystr is an array of values.  Loop through each and identify what format the individual values are
   if (Array.isArray(keystr)) {
+
     for (let i=0; i<keystr.length; i++) {
 
       // The substring value is in string notation - recurse with the key string
@@ -209,11 +225,14 @@ function setKeyValue(dest, keystr, data, context = {})
   }
 
   // The value is in string notation - ready for update!
-  else if (typeof keystr == 'string')
+  else if (typeof keystr == 'string') {
+
     dest = update(dest, data, parse(keystr), context)
+  }
 
   // The value is in object notation - dig a bit further
   else {
+
     if (typeof keystr.transform !== 'undefined') context.transform = keystr.transform
     if (typeof keystr.default !== 'undefined') context.default = keystr.default
     // If the value of the key is an array, parse the array.  If this is parsed in a recursion, it is confused with arrays containing multiple values
@@ -235,11 +254,13 @@ function setKeyValue(dest, keystr, data, context = {})
 function update(dest, data, keys, context)
 {
   if (keys) {
+
     // Get the object key and index that needs to be parsed
     const key = keys.shift()
 
     // If there is a key, we need to traverse down to this part of the object
     if (key.name)
+
       return update_obj(dest, key, data, keys, context)
 
     // If there is an array index, we need to traverse through the array
@@ -247,7 +268,6 @@ function update(dest, data, keys, context)
       return update_arr(dest, key, data, keys, context)
     }
   }
-
   // If there is neither an array or index, we need to see if there is data to set
   return set_data(dest, keys, data, context)
 }
@@ -259,6 +279,7 @@ function update_obj(dest, key, data, keys, context)
   if (keys.length) {
     // There is a pre-existing destination object.  Recurse through to the object key
     if (dest !== null && typeof dest !== 'undefined') {
+  
       let o = update(dest[key.name], data, keys, context)
       if (o !== null && typeof o !== 'undefined')
         dest[key.name] = o
@@ -266,16 +287,21 @@ function update_obj(dest, key, data, keys, context)
     // There is no pre-existing object.  Check to see if data exists before creating a new object
     else {
       // Check to see if there is a value before creating an object to store it
+  
       let o = update(null, data, keys, context)
       if (o !== null) {
         dest = {}
         dest[key.name] = o
       }
+  
     }
   }
   // This is a leaf.  Set data into the dest
-  else
+  else {
+
+
     dest = set_data(dest, key, data, context)
+  }
 
   return dest
 }
@@ -285,26 +311,32 @@ function update_arr(dest, key, data, keys, context)
 {
   // The 'add' instruction is set.  This means to take the data and add it onto a new array node 
   if (key.add) {
+
     if (data !== null && typeof data !== 'undefined') {
+  
       dest = dest || []
       dest.push(applyTransform(data,dest,context))
       // dest = dest.concat(data)
     }
+
     return dest
   }
 
   // Just update a single array node
   if (key.ix !== '') {
+
     return update_arr_ix(dest, key.ix, applyTransform(data,dest,context), keys, context)
   }
 
   // If the data is in an array format then make sure that there is a dest index for each data index
   if (Array.isArray(data)) {
+
     dest = dest || []
     // Loop through each index in the data array and update the destination object with the data
     dest = data.reduce(function(dest,d,i) {
       // If the instruction is to update all array indices ('') or the current index, update the child data element.  Otherwise, don't bother
       if (key.ix == '' || key.ix == i) {
+    
         return update_arr_ix(dest, i, applyTransform(d,dest,context), keys.slice(), context)
       }
     }, dest)
@@ -313,8 +345,10 @@ function update_arr(dest, key, data, keys, context)
   }
 
   // Set the specific array index with the data
-  else 
+  else {
+
     return update_arr_ix(dest, '0', data, keys, context)
+  }
 }
 
 function applyTransform(data, dest, context){
@@ -371,7 +405,6 @@ function set_data(dest, key, data, context)
       dest[key.name] = data
     }
   }
-
   // Return the dest variable back to the caller.
   return dest
 }
